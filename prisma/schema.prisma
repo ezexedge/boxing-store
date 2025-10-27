@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  apellido  String
+  role      String   @default("user") // "user" or "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  pedidos   Pedido[]
+}
+
+model Producto {
+  id             String        @id @default(cuid())
+  nombre         String
+  descripcion    String
+  precio         Float
+  categoria      String // "remeras", "shorts", "buzos", "tops"
+  genero         String // "hombre", "mujer"
+  imagenes       String[] // Array of image URLs
+  imagenPortada  String? // Added cover image field
+  variantes      Variante[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  pedidoItems    PedidoItem[]
+}
+
+model Pedido {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  total           Float
+  estado          String       @default("pendiente") // "pendiente", "pagado", "enviado", "entregado"
+  mercadopagoId   String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  items           PedidoItem[]
+}
+
+model PedidoItem {
+  id         String   @id @default(cuid())
+  pedidoId   String
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+  cantidad   Int
+  precio     Float
+  color      String?
+  talle      String?
+  createdAt  DateTime @default(now())
+}
+
+model Variante {
+  id         String   @id @default(cuid())
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  color      String
+  talle      String
+  stock      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([productoId, color, talle])
+}
