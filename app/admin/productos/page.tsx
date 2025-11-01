@@ -49,6 +49,7 @@ export default function AdminProductosPage() {
         },
       })
       const data = await response.json()
+      console.log("xxx",data)
       setProductos(data.productos)
     } catch (error) {
       console.error("[v0] Fetch productos error:", error)

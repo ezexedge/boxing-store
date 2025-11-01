@@ -5,7 +5,7 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 console.log("[v0] Initializing Prisma Client...")
-console.log("[v0] NEON_DATABASE_URL exists:", !!process.env.NEON_DATABASE_URL)
+console.log("[v0] NEON_DATABASE_URL exists:", !!process.env.DATABASE_URL)
 
 export const prisma =
   globalForPrisma.prisma ??

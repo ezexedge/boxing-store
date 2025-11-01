@@ -5,22 +5,21 @@ import { getTokenFromRequest, verifyToken } from "@/lib/auth"
 export async function GET(request: Request) {
   try {
     const token = getTokenFromRequest(request)
-    if (!token) {
+    if (!token)
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
 
     const payload = verifyToken(token)
-    if (!payload || payload.role !== "admin") {
+    if (!payload || payload.role !== "admin")
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
-    }
 
     const productos = await prisma.producto.findMany({
       include: {
-        variantes: true,
+        variantes: true, // 👈 Trae TODAS las variantes
       },
       orderBy: { createdAt: "desc" },
     })
 
+    console.log("PRODUCTOS DEVUELTOS:", JSON.stringify(productos, null, 2)) // 👈 ver en consola
     return NextResponse.json({ productos })
   } catch (error) {
     console.error("[v0] Get admin productos error:", error)
@@ -31,28 +30,37 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const token = getTokenFromRequest(request)
-    if (!token) {
+    if (!token)
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
 
     const payload = verifyToken(token)
-    if (!payload || payload.role !== "admin") {
+    if (!payload || payload.role !== "admin")
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
-    }
 
     const data = await request.json()
+    console.log("DATA VARIANTES RECIBIDAS:", data.variantes) // 👈 Depuración clave
 
+    // ✅ Validación de datos
+    if (!Array.isArray(data.variantes) || data.variantes.length === 0) {
+      return NextResponse.json({ error: "Debe incluir al menos una variante" }, { status: 400 })
+    }
+
+    // ✅ Creación
     const producto = await prisma.producto.create({
       data: {
         nombre: data.nombre,
         descripcion: data.descripcion,
-        precio: Number.parseFloat(data.precio),
+        precio: Number(data.precio),
         categoria: data.categoria,
         genero: data.genero,
         imagenes: data.imagenes || [],
         imagenPortada: data.imagenPortada || data.imagenes?.[0] || null,
         variantes: {
-          create: data.variantes || [],
+          create: data.variantes.map((v: any) => ({
+            color: v.color,
+            talle: v.talle,
+            stock: Number(v.stock),
+          })),
         },
       },
       include: {
@@ -60,6 +68,7 @@ export async function POST(request: Request) {
       },
     })
 
+    console.log("PRODUCTO CREADO:", producto) // 👈 Confirma que Prisma guardó las variantes
     return NextResponse.json({ producto })
   } catch (error) {
     console.error("[v0] Create producto error:", error)
